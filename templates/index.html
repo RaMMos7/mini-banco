@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mini Banco com Flask</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="container">
@@ -12,6 +13,7 @@
 
         <div class="form-container">
             <h2>Criar Nova Conta</h2>
+            
             <form action="{{ url_for('add_conta') }}" method="POST">
                 <input type="text" name="nome_titular" placeholder="Nome do Titular" required>
                 <input type="text" name="numero_conta" placeholder="Número da Conta" required>
@@ -39,6 +41,7 @@
                         <td id="saldo-{{ conta.id }}">R$ {{ "%.2f"|format(conta.saldo) }}</td>
                         <td class="actions">
                             <button class="btn-details" onclick="openDetailsModal({{ conta.id }})">Ver Detalhes</button>
+                            
                             <a href="{{ url_for('delete_conta', id=conta.id) }}" class="btn-delete" onclick="return confirm('Tem certeza que deseja excluir esta conta?')">Excluir</a>
                         </td>
                     </tr>
@@ -48,6 +51,7 @@
         </div>
     </div>
 
+   
     <div id="details-modal" class="modal">
         <div class="modal-content">
             <span class="close-button" onclick="closeDetailsModal()">&times;</span>
@@ -86,13 +90,16 @@
                             </tr>
                         </thead>
                         <tbody id="history-body">
-                            </tbody>
+                           
+                        </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
 
+  
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>
+

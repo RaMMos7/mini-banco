@@ -1,20 +1,15 @@
+
+
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from datetime import datetime
 import threading
 
 app = Flask(__name__)
 
-# --- Armazenamento de Dados em Memória ---
 
-# Usamos um Lock para garantir que as operações em nossa "base de dados" em memória sejam seguras entre múltiplas requisições.
 data_lock = threading.Lock()
-
-# Estrutura para armazenar os dados. Funciona como nosso "banco de dados" temporário.
 contas_db = {} 
-# Contador para gerar IDs únicos para novas contas
 ultima_conta_id = 0
-
-# --- Funções Auxiliares ---
 
 def gerar_novo_id():
     """ Gera um novo ID de conta de forma segura. """
@@ -23,12 +18,11 @@ def gerar_novo_id():
         ultima_conta_id += 1
         return ultima_conta_id
 
-# --- Rotas da Aplicação ---
+
 
 @app.route('/')
 def index():
     """ Rota principal que exibe todas as contas. """
-    # Ordena as contas pelo nome do titular para exibição
     contas_ordenadas = sorted(list(contas_db.values()), key=lambda c: c['nome_titular'])
     return render_template('index.html', contas=contas_ordenadas)
 
@@ -39,9 +33,7 @@ def add_conta():
     numero_conta = request.form['numero_conta']
     saldo_inicial = float(request.form['saldo_inicial'] or 0.0)
 
-    # Verifica se o número da conta já existe
     if any(c['numero_conta'] == numero_conta for c in contas_db.values()):
-        # Em uma aplicação real, seria melhor notificar o erro ao usuário.
         return redirect(url_for('index'))
 
     novo_id = gerar_novo_id()
@@ -53,7 +45,6 @@ def add_conta():
         'transacoes': []
     }
     
-    # Se houver saldo inicial, registra como a primeira transação
     if saldo_inicial > 0:
         nova_conta['transacoes'].append({
             'tipo': 'Depósito Inicial',
@@ -73,6 +64,7 @@ def delete_conta(id):
         if id in contas_db:
             del contas_db[id]
     return redirect(url_for('index'))
+
 
 @app.route('/transacao', methods=['POST'])
 def realizar_transacao():
@@ -98,7 +90,6 @@ def realizar_transacao():
         else:
             return jsonify({'success': False, 'message': 'Tipo de transação inválido.'}), 400
         
-        # Adiciona a nova transação ao histórico da conta
         conta['transacoes'].append({
             'tipo': transacao_tipo,
             'valor': valor,
@@ -111,6 +102,7 @@ def realizar_transacao():
             'message': f'{tipo_transacao.capitalize()} realizado com sucesso!'
         })
 
+
 @app.route('/conta/get/<int:id>')
 def get_conta_details(id):
     """ Retorna os detalhes e transações de uma conta em formato JSON. """
@@ -118,7 +110,6 @@ def get_conta_details(id):
     if not conta:
         return jsonify({'error': 'Conta não encontrada'}), 404
     
-    # Formata as transações para exibição, da mais recente para a mais antiga
     transacoes_formatadas = []
     transacoes_ordenadas = sorted(conta['transacoes'], key=lambda t: t['timestamp'], reverse=True)
     

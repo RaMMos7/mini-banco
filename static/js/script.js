@@ -1,12 +1,11 @@
-// --- Gerenciamento do Modal ---
+
 
 const modal = document.getElementById('details-modal');
 const transactionMessage = document.getElementById('transaction-message');
 
-// Abre o modal e busca os dados da conta
 async function openDetailsModal(contaId) {
-    transactionMessage.innerText = ''; // Limpa mensagens anteriores
-    document.getElementById('transaction-valor').value = ''; // Limpa o campo de valor
+    transactionMessage.innerText = '';
+    document.getElementById('transaction-valor').value = ''; 
     
     try {
         const response = await fetch(`/conta/get/${contaId}`);
@@ -15,15 +14,15 @@ async function openDetailsModal(contaId) {
         }
         const data = await response.json();
 
-        // Preenche os dados do modal
+     
         document.getElementById('modal-conta-id').value = data.id;
         document.getElementById('modal-nome').innerText = data.nome_titular;
         document.getElementById('modal-conta').innerText = data.numero_conta;
         document.getElementById('modal-saldo').innerText = data.saldo;
 
-        // Preenche o histórico de transações
+       
         const historyBody = document.getElementById('history-body');
-        historyBody.innerHTML = ''; // Limpa o histórico anterior
+        historyBody.innerHTML = '';
         
         if (data.transacoes.length > 0) {
             data.transacoes.forEach(t => {
@@ -45,23 +44,19 @@ async function openDetailsModal(contaId) {
     }
 }
 
-// Fecha o modal
+
 function closeDetailsModal() {
     modal.style.display = 'none';
 }
 
-// Fecha o modal se o usuário clicar fora do conteúdo
 window.onclick = function(event) {
     if (event.target == modal) {
         closeDetailsModal();
     }
 }
 
-
-// --- Lógica de Transação ---
-
 async function handleTransaction(event) {
-    event.preventDefault(); // Impede o recarregamento da página
+    event.preventDefault();
 
     const form = event.target;
     const formData = new FormData(form);
@@ -78,19 +73,16 @@ async function handleTransaction(event) {
         const result = await response.json();
 
         if (response.ok) {
-            // Atualiza o saldo na tela principal e no modal
+            
             const novoSaldo = result.novo_saldo;
             document.getElementById(`saldo-${contaId}`).innerText = `R$ ${novoSaldo}`;
             document.getElementById('modal-saldo').innerText = novoSaldo;
             
-            // Exibe mensagem de sucesso
             transactionMessage.innerText = result.message;
             transactionMessage.classList.add('success');
             
-            // Recarrega os detalhes para atualizar o histórico
             openDetailsModal(contaId);
         } else {
-            // Exibe mensagem de erro
             transactionMessage.innerText = result.message || 'Ocorreu um erro.';
             transactionMessage.classList.add('error');
         }
