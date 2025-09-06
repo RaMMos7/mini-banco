@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Banco com Flask</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Gerenciador de Contas - Mini Banco</h1>
+
+        <div class="form-container">
+            <h2>Criar Nova Conta</h2>
+            <form action="{{ url_for('add_conta') }}" method="POST">
+                <input type="text" name="nome_titular" placeholder="Nome do Titular" required>
+                <input type="text" name="numero_conta" placeholder="Número da Conta" required>
+                <input type="number" name="saldo_inicial" step="0.01" min="0" placeholder="Depósito Inicial (Opcional)">
+                <button type="submit">Adicionar Conta</button>
+            </form>
+        </div>
+
+        <div class="table-container">
+            <h2>Contas Cadastradas</h2>
+            <table id="contas-table">
+                <thead>
+                    <tr>
+                        <th>Nome do Titular</th>
+                        <th>Número da Conta</th>
+                        <th>Saldo (R$)</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for conta in contas %}
+                    <tr>
+                        <td>{{ conta.nome_titular }}</td>
+                        <td>{{ conta.numero_conta }}</td>
+                        <td id="saldo-{{ conta.id }}">R$ {{ "%.2f"|format(conta.saldo) }}</td>
+                        <td class="actions">
+                            <button class="btn-details" onclick="openDetailsModal({{ conta.id }})">Ver Detalhes</button>
+                            <a href="{{ url_for('delete_conta', id=conta.id) }}" class="btn-delete" onclick="return confirm('Tem certeza que deseja excluir esta conta?')">Excluir</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeDetailsModal()">&times;</span>
+            <h2 id="modal-title">Detalhes da Conta</h2>
+            <div id="modal-body">
+                <p><strong>Titular:</strong> <span id="modal-nome"></span></p>
+                <p><strong>Conta:</strong> <span id="modal-conta"></span></p>
+                <p><strong>Saldo Atual:</strong> R$ <span id="modal-saldo"></span></p>
+
+                <hr>
+
+                <div class="transaction-form">
+                    <h3>Realizar Transação</h3>
+                    <form id="transaction-form" onsubmit="handleTransaction(event)">
+                        <input type="hidden" id="modal-conta-id" name="conta_id">
+                        <input type="number" id="transaction-valor" name="valor" step="0.01" min="0.01" placeholder="Valor da Transação" required>
+                        <select id="transaction-type" name="tipo_transacao">
+                            <option value="deposito">Depósito</option>
+                            <option value="saque">Saque</option>
+                        </select>
+                        <button type="submit">Confirmar</button>
+                    </form>
+                    <p id="transaction-message" class="message"></p>
+                </div>
+
+                <hr>
+                
+                <h3>Histórico de Transações</h3>
+                <div id="transaction-history">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Tipo</th>
+                                <th>Valor (R$)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
