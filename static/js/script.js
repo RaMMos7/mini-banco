@@ -3,38 +3,46 @@
 const modal = document.getElementById('details-modal');
 const transactionMessage = document.getElementById('transaction-message');
 
-async function openDetailsModal(contaId) {
+/**
+ * 
+ * @param {number} accountId - O ID da conta a ser detalhada.
+ */
+async function openDetailsModal(accountId) {
+    
+    if (!modal) return;
+    
     transactionMessage.innerText = '';
     document.getElementById('transaction-valor').value = ''; 
     
     try {
-        const response = await fetch(`/conta/get/${contaId}`);
+        const response = await fetch(`/accounts/details/${accountId}`);
         if (!response.ok) {
             throw new Error('Falha ao buscar dados da conta.');
         }
+        
         const data = await response.json();
 
-     
+        
         document.getElementById('modal-conta-id').value = data.id;
-        document.getElementById('modal-nome').innerText = data.nome_titular;
-        document.getElementById('modal-conta').innerText = data.numero_conta;
-        document.getElementById('modal-saldo').innerText = data.saldo;
+        document.getElementById('modal-nome').innerText = data.holder_name;
+        document.getElementById('modal-conta-numero').innerText = data.account_number;
+        document.getElementById('modal-saldo').innerText = data.balance.toFixed(2);
 
-       
         const historyBody = document.getElementById('history-body');
         historyBody.innerHTML = '';
         
-        if (data.transacoes.length > 0) {
-            data.transacoes.forEach(t => {
+        if (data.transactions && data.transactions.length > 0) {
+           
+            data.transactions.slice().reverse().forEach(t => {
                 const row = `<tr>
                                 <td>${t.timestamp}</td>
-                                <td>${t.tipo}</td>
-                                <td>R$ ${t.valor}</td>
+                                <td>${t.type}</td>
+                                <td>R$ ${parseFloat(t.amount).toFixed(2)}</td>
                              </tr>`;
                 historyBody.innerHTML += row;
             });
         } else {
-            historyBody.innerHTML = '<tr><td colspan="3">Nenhuma transação registrada.</td></tr>';
+            historyBody.innerHTML = '<tr><td colspan="3">Nenhuma transação registada.</td></tr>';
         }
 
         modal.style.display = 'block';
@@ -46,8 +54,11 @@ async function openDetailsModal(contaId) {
 
 
 function closeDetailsModal() {
-    modal.style.display = 'none';
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
+
 
 window.onclick = function(event) {
     if (event.target == modal) {
@@ -55,17 +66,21 @@ window.onclick = function(event) {
     }
 }
 
+/**
+ 
+ * @param {Event} event - O evento de submit do formulário.
+ */
 async function handleTransaction(event) {
-    event.preventDefault();
+    event.preventDefault(); 
 
     const form = event.target;
     const formData = new FormData(form);
-    const contaId = formData.get('conta_id');
+    const accountId = formData.get('account_id');
     
     transactionMessage.classList.remove('success', 'error');
 
     try {
-        const response = await fetch('/transacao', {
+        const response = await fetch('/accounts/transaction', {
             method: 'POST',
             body: formData,
         });
@@ -73,16 +88,18 @@ async function handleTransaction(event) {
         const result = await response.json();
 
         if (response.ok) {
+            const newBalance = parseFloat(result.new_balance).toFixed(2);
             
-            const novoSaldo = result.novo_saldo;
-            document.getElementById(`saldo-${contaId}`).innerText = `R$ ${novoSaldo}`;
-            document.getElementById('modal-saldo').innerText = novoSaldo;
+            document.getElementById(`saldo-${accountId}`).innerText = `R$ ${newBalance}`;
+            document.getElementById('modal-saldo').innerText = newBalance;
             
             transactionMessage.innerText = result.message;
             transactionMessage.classList.add('success');
             
-            openDetailsModal(contaId);
+            
+            openDetailsModal(accountId);
         } else {
+            
             transactionMessage.innerText = result.message || 'Ocorreu um erro.';
             transactionMessage.classList.add('error');
         }
@@ -92,3 +109,4 @@ async function handleTransaction(event) {
         transactionMessage.classList.add('error');
     }
 }
+

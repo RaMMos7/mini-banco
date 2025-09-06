@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Meu Perfil{% endblock %}
+
+{% block content %}
+<div class="form-container auth-form">
+    <h2>Editar Perfil</h2>
+    <p>Atualize as suas informações abaixo.</p>
+    
+    <!-- Formulário de Atualização de Perfil -->
+    <form action="{{ url_for('update_profile') }}" method="POST">
+        <div>
+            <label for="name">Nome:</label>
+            <input type="text" id="name" name="name" value="{{ user.name }}" required>
+        </div>
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" value="{{ user.email }}" required>
+        </div>
+        <button type="submit">Guardar Alterações</button>
+    </form>
+    
+    <!-- Zona de Perigo para Eliminar a Conta -->
+    <div class="danger-zone">
+        <h3>Eliminar Conta</h3>
+        <p>Esta ação é irreversível. Todos os seus dados, incluindo contas bancárias, serão eliminados permanentemente.</p>
+        <form action="{{ url_for('delete_profile') }}" method="POST" onsubmit="return confirm('Tem a certeza absoluta de que deseja eliminar a sua conta?');">
+            <button type="submit" class="btn-delete">Eliminar a Minha Conta</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

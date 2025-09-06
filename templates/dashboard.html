@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Meu Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Bem-vindo ao seu Mini Banco, {{ session['user_name'] }}!</h2>
+    <p>Aqui pode gerir as suas contas bancárias pessoais.</p>
+
+    
+    <div class="form-container">
+        <h3>Criar Nova Conta Bancária</h3>
+        <form action="{{ url_for('add_account') }}" method="POST">
+            <input type="text" name="holder_name" placeholder="Nome do Titular (ex: {{ session['user_name'] }})" required>
+            <input type="text" name="account_number" placeholder="Número da Conta" required>
+            <input type="number" name="initial_balance" step="0.01" min="0" placeholder="Depósito Inicial (Opcional)">
+            <button type="submit">Adicionar Conta</button>
+        </form>
+    </div>
+
+    
+    <div class="table-container">
+        <h3>As Minhas Contas</h3>
+        {% if accounts %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Titular</th>
+                    <th>Número da Conta</th>
+                    <th>Saldo (R$)</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for account in accounts %}
+                <tr>
+                    <td>{{ account.holder_name }}</td>
+                    <td>{{ account.account_number }}</td>
+                    <td id="saldo-{{ account.id }}">R$ {{ "%.2f"|format(account.balance) }}</td>
+                    <td class="actions">
+                        <button class="btn-details" onclick="openDetailsModal({{ account.id }})">Detalhes</button>
+                        <form action="{{ url_for('delete_account', account_id=account.id) }}" method="POST" onsubmit="return confirm('Tem a certeza de que deseja eliminar esta conta? Esta ação é irreversível.');" style="display: inline;">
+                            <button type="submit" class="btn-delete">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="alert alert-info" style="text-align: left;">Ainda não tem contas registadas. Crie a sua primeira conta no formulário acima!</p>
+        {% endif %}
+    </div>
+</div>
+
+
+<div id="details-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeDetailsModal()">&times;</span>
+        <h2 id="modal-title">Detalhes da Conta</h2>
+        <div id="modal-body">
+            <p><strong>Titular:</strong> <span id="modal-nome"></span></p>
+            <p><strong>Conta:</strong> <span id="modal-conta-numero"></span></p>
+            <p><strong>Saldo Atual:</strong> R$ <span id="modal-saldo"></span></p>
+
+            <hr>
+
+            <div class="transaction-form">
+                <h3>Realizar Transação</h3>
+                <form id="transaction-form" onsubmit="handleTransaction(event)">
+                    <input type="hidden" id="modal-conta-id" name="account_id">
+                    <input type="number" id="transaction-valor" name="amount" step="0.01" min="0.01" placeholder="Valor da Transação" required>
+                    <select id="transaction-type" name="transaction_type">
+                        <option value="deposito">Depósito</option>
+                        <option value="saque">Saque</option>
+                    </select>
+                    <button type="submit">Confirmar</button>
+                </form>
+                <p id="transaction-message" class="message"></p>
+            </div>
+
+            <hr>
+            
+            <h3>Histórico de Transações</h3>
+            <div id="transaction-history">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Tipo</th>
+                            <th>Valor (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,14 @@
+{
+    "users": {
+        "2": {
+            "id": 2,
+            "name": "miguel ramos dos santos ",
+            "email": "miguelramos@gmail.com",
+            "password_hash": "$2b$12$y1nNqxXXvGrHXX4XdlYNYuYjqIsekZnxbF.2NXX8HDSKLwkQCDeQe",
+            "is_admin": true
+        }
+    },
+    "next_id": 3,
+    "next_account_id": 2,
+    "accounts": {}
+}

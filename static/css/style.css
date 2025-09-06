@@ -1,176 +1,264 @@
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f7f6;
-    color: #333;
+/* ==============================================
+   ARQUIVO DE ESTILO - PROJETO CRUD FLASK
+   Versão aprimorada com responsividade e design moderno.
+   ==============================================
+*/
+
+/* --- Variáveis Globais e Reset --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
+
+:root {
+    --primary-color: #3498db;
+    --primary-hover: #2980b9;
+    --secondary-color: #2c3e50;
+    --danger-color: #e74c3c;
+    --danger-hover: #c0392b;
+    --success-color: #27ae60;
+    --warning-color: #f39c12;
+    --info-color: #3498db;
+    --light-bg: #f4f7f6;
+    --white-color: #fff;
+    --dark-text: #333;
+    --light-text: #ecf0f1;
+    --border-color: #ddd;
+    --shadow-color: rgba(0, 0, 0, 0.08);
+}
+
+* {
+    box-sizing: border-box;
     margin: 0;
-    padding: 20px;
+    padding: 0;
+}
+
+body {
+    font-family: 'Poppins', Arial, sans-serif;
+    background-color: var(--light-bg);
+    color: var(--dark-text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .container {
     max-width: 900px;
-    margin: auto;
-    background-color: #fff;
+    margin: 20px auto;
     padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-h1, h2 {
-    color: #2c3e50;
-    text-align: center;
+/* --- Header e Navegação --- */
+header {
+    background-color: var(--secondary-color);
+    color: var(--white-color);
+    padding: 15px 40px;
+    box-shadow: 0 2px 8px var(--shadow-color);
 }
 
-hr {
-    border: 0;
-    height: 1px;
-    background-color: #e0e0e0;
-    margin: 20px 0;
-}
-
-.form-container, .transaction-form {
-    background-color: #ecf0f1;
-    padding: 20px;
-    border-radius: 5px;
-    margin-bottom: 30px;
-}
-
-.form-container form, .transaction-form form {
+nav {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+    justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap; /* Permite que o menu quebre em telas menores */
 }
 
-input[type="text"], input[type="number"], select {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #bdc3c7;
-    border-radius: 4px;
-    font-size: 14px;
+nav .brand {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: var(--white-color);
+    text-decoration: none;
 }
 
-button {
-    padding: 10px 15px;
+nav ul {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+nav a {
+    color: var(--light-text);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+nav a:hover {
+    color: var(--primary-color);
+}
+
+.btn-logout {
+    background-color: var(--danger-color);
+    padding: 8px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+.btn-logout:hover {
+    background-color: var(--danger-hover);
+    color: var(--white-color);
+}
+
+/* --- Alertas e Mensagens --- */
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    color: var(--white-color);
+    text-align: center;
+    font-weight: 500;
+}
+.alert-success { background-color: var(--success-color); }
+.alert-danger { background-color: var(--danger-color); }
+.alert-warning { background-color: var(--warning-color); }
+.alert-info { background-color: var(--info-color); }
+
+/* --- Formulários --- */
+.form-container {
+    background-color: var(--white-color);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    margin-bottom: 20px;
+}
+
+.auth-form {
+    max-width: 450px;
+    margin: 40px auto;
+}
+.auth-form p { 
+    text-align: center;
+    margin-top: 15px;
+}
+
+.form-container h2 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    text-align: center;
+    color: var(--secondary-color);
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+input[type="text"], input[type="email"], input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+button[type="submit"] {
+    width: 100%;
+    padding: 12px;
     border: none;
-    border-radius: 4px;
+    border-radius: 5px;
     color: white;
-    background-color: #3498db;
+    background-color: var(--primary-color);
     cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s;
+    font-size: 16px;
+    font-weight: 500;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 button[type="submit"]:hover {
-    background-color: #2980b9;
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
 }
 
+/* --- Tabela (Painel Admin) --- */
 .table-container {
-    overflow-x: auto;
+    background: var(--white-color);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    overflow-x: auto; /* Garante que a tabela seja rolável em telas pequenas */
 }
-
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
 }
-
 th, td {
-    padding: 12px;
+    padding: 15px;
     text-align: left;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--border-color);
 }
-
 th {
-    background-color: #34495e;
+    background-color: var(--secondary-color);
     color: white;
+    font-weight: 500;
 }
-
-tbody tr:nth-child(even) {
-    background-color: #f2f2f2;
+tbody tr:last-child td {
+    border-bottom: none;
 }
-
 tbody tr:hover {
-    background-color: #e0e0e0;
+    background-color: #f9f9f9;
 }
 
-.actions {
-    display: flex;
-    gap: 10px;
-}
-
-.btn-details, .btn-delete {
-    padding: 8px 12px;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-    font-size: 12px;
-}
-
-.btn-details {
-    background-color: #1abc9c;
-}
-.btn-details:hover {
-    background-color: #16a085;
-}
-
+/* --- Botões de Ação e Zonas de Perigo --- */
 .btn-delete {
-    background-color: #e74c3c;
+    background-color: var(--danger-color);
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.3s ease;
 }
 .btn-delete:hover {
-    background-color: #c0392b;
+    background-color: var(--danger-hover);
 }
 
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-.modal-content {
-    background-color: #fefefe;
-    margin: 10% auto;
+.danger-zone {
+    border: 1px solid var(--danger-hover);
+    border-radius: 5px;
     padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 600px;
-    border-radius: 8px;
-    position: relative;
+    margin-top: 30px;
+    background-color: #fdf2f2;
+}
+.danger-zone button {
+    width: auto; /* Botão não ocupa a largura toda */
 }
 
-.close-button {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
+/* ==============================================
+   RESPONSIVIDADE - Para Celulares e Telas Pequenas
+   ==============================================
+*/
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    header {
+        padding: 15px 20px;
+    }
+
+    nav {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    nav ul {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .form-container, .table-container {
+        padding: 20px;
+    }
 }
 
-.close-button:hover,
-.close-button:focus {
-    color: black;
-}
-
-#transaction-history {
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-.message {
-    margin-top: 10px;
-    font-weight: bold;
-}
-.success {
-    color: #27ae60;
-}
-.error {
-    color: #c0392b;
-}
-.info {
-    color: #2980b9;
-}

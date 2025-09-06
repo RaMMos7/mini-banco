@@ -1,132 +1,162 @@
-
-
-from flask import Flask, render_template, request, redirect, url_for, jsonify
-from datetime import datetime
-import threading
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from services.user_service import UserService
+from services.account_service import AccountService # Importar o novo serviço
+from functools import wraps
 
 app = Flask(__name__)
+app.secret_key = 'uma-chave-secreta-muito-forte-e-dificil-de-adivinhar' 
+user_service = UserService()
+account_service = AccountService() # Instanciar o serviço de contas
 
+# --- Decorators para Controlo de Acesso ---
+def login_required(f):
+    """ Garante que o utilizador esteja autenticado para aceder à rota. """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('É necessário estar autenticado para aceder a esta página.', 'warning')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
-data_lock = threading.Lock()
-contas_db = {} 
-ultima_conta_id = 0
+def admin_required(f):
+    """ Garante que o utilizador seja um administrador. """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Acesso negado.', 'danger')
+            return redirect(url_for('login'))
+        if not session.get('is_admin'):
+            flash('Acesso restrito a administradores.', 'danger')
+            return redirect(url_for('dashboard')) # Redireciona para o dashboard
+        return f(*args, **kwargs)
+    return decorated_function
 
-def gerar_novo_id():
-    """ Gera um novo ID de conta de forma segura. """
-    global ultima_conta_id
-    with data_lock:
-        ultima_conta_id += 1
-        return ultima_conta_id
+# --- Rotas de Autenticação e Utilizador (já existentes) ---
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        user = user_service.authenticate(email, password)
+        if user:
+            session['user_id'] = user.id
+            session['user_name'] = user.name
+            session['is_admin'] = user.is_admin
+            flash('Login efetuado com sucesso!', 'success')
+            return redirect(url_for('dashboard')) # Redireciona para o novo dashboard
+        else:
+            flash('Email ou palavra-passe inválidos.', 'danger')
+    return render_template('login.html')
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        password = request.form['password']
+        if user_service.find_by_email(email):
+            flash('Este email já se encontra registado.', 'warning')
+        else:
+            user_service.create_user(name, email, password)
+            flash('Registo efetuado com sucesso! Por favor, inicie a sessão.', 'success')
+            return redirect(url_for('login'))
+    return render_template('register.html')
 
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Sessão terminada com sucesso.', 'info')
+    return redirect(url_for('login'))
 
 @app.route('/')
 def index():
-    """ Rota principal que exibe todas as contas. """
-    contas_ordenadas = sorted(list(contas_db.values()), key=lambda c: c['nome_titular'])
-    return render_template('index.html', contas=contas_ordenadas)
+    return redirect(url_for('login'))
 
-@app.route('/conta/add', methods=['POST'])
-def add_conta():
-    """ Rota para adicionar uma nova conta. """
-    nome_titular = request.form['nome_titular']
-    numero_conta = request.form['numero_conta']
-    saldo_inicial = float(request.form['saldo_inicial'] or 0.0)
+@app.route('/profile')
+@login_required
+def profile():
+    user = user_service.find_by_id(session['user_id'])
+    return render_template('profile.html', user=user)
 
-    if any(c['numero_conta'] == numero_conta for c in contas_db.values()):
-        return redirect(url_for('index'))
+# --- ROTAS NOVAS E ATUALIZADAS PARA O MINI BANCO ---
 
-    novo_id = gerar_novo_id()
-    nova_conta = {
-        'id': novo_id,
-        'nome_titular': nome_titular,
-        'numero_conta': numero_conta,
-        'saldo': saldo_inicial,
-        'transacoes': []
-    }
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    """ Rota principal que mostra as contas do utilizador. """
+    user_id = session['user_id']
+    accounts = account_service.get_accounts_for_user(user_id)
+    return render_template('dashboard.html', accounts=accounts)
+
+@app.route('/accounts/add', methods=['POST'])
+@login_required
+def add_account():
+    """ Rota para adicionar uma nova conta bancária. """
+    user_id = session['user_id']
+    holder_name = request.form['holder_name']
+    account_number = request.form['account_number']
+    initial_balance = float(request.form.get('initial_balance') or 0.0)
     
-    if saldo_inicial > 0:
-        nova_conta['transacoes'].append({
-            'tipo': 'Depósito Inicial',
-            'valor': saldo_inicial,
-            'timestamp': datetime.utcnow()
-        })
-    
-    with data_lock:
-        contas_db[novo_id] = nova_conta
-        
-    return redirect(url_for('index'))
+    account_service.create_account(user_id, holder_name, account_number, initial_balance)
+    flash('Nova conta bancária criada com sucesso!', 'success')
+    return redirect(url_for('dashboard'))
 
-@app.route('/conta/delete/<int:id>')
-def delete_conta(id):
-    """ Rota para deletar uma conta. """
-    with data_lock:
-        if id in contas_db:
-            del contas_db[id]
-    return redirect(url_for('index'))
+@app.route('/accounts/delete/<int:account_id>', methods=['POST'])
+@login_required
+def delete_account(account_id):
+    """ Rota para eliminar uma conta. """
+    user_id = session['user_id']
+    success = account_service.delete_account(account_id, user_id)
+    if success:
+        flash('Conta eliminada com sucesso.', 'success')
+    else:
+        flash('Erro ao eliminar a conta.', 'danger')
+    return redirect(url_for('dashboard'))
 
-
-@app.route('/transacao', methods=['POST'])
-def realizar_transacao():
-    """ Rota para realizar um depósito ou saque. """
-    conta_id = int(request.form['conta_id'])
-    tipo_transacao = request.form['tipo_transacao']
-    valor = float(request.form['valor'])
-
-    with data_lock:
-        conta = contas_db.get(conta_id)
-
-        if not conta or valor <= 0:
-            return jsonify({'success': False, 'message': 'Dados inválidos.'}), 400
-
-        if tipo_transacao == 'deposito':
-            conta['saldo'] += valor
-            transacao_tipo = 'Depósito'
-        elif tipo_transacao == 'saque':
-            if conta['saldo'] < valor:
-                return jsonify({'success': False, 'message': 'Saldo insuficiente.'}), 400
-            conta['saldo'] -= valor
-            transacao_tipo = 'Saque'
-        else:
-            return jsonify({'success': False, 'message': 'Tipo de transação inválido.'}), 400
-        
-        conta['transacoes'].append({
-            'tipo': transacao_tipo,
-            'valor': valor,
-            'timestamp': datetime.utcnow()
-        })
-
-        return jsonify({
-            'success': True,
-            'novo_saldo': f"{conta['saldo']:.2f}",
-            'message': f'{tipo_transacao.capitalize()} realizado com sucesso!'
-        })
-
-
-@app.route('/conta/get/<int:id>')
-def get_conta_details(id):
-    """ Retorna os detalhes e transações de uma conta em formato JSON. """
-    conta = contas_db.get(id)
-    if not conta:
+@app.route('/accounts/details/<int:account_id>')
+@login_required
+def get_account_details(account_id):
+    """ Rota chamada pelo JavaScript para obter os detalhes de uma conta. """
+    user_id = session['user_id']
+    account = account_service.find_account_by_id(account_id, user_id)
+    if not account:
         return jsonify({'error': 'Conta não encontrada'}), 404
-    
-    transacoes_formatadas = []
-    transacoes_ordenadas = sorted(conta['transacoes'], key=lambda t: t['timestamp'], reverse=True)
-    
-    for t in transacoes_ordenadas:
-        transacoes_formatadas.append({
-            'tipo': t['tipo'],
-            'valor': f"{t['valor']:.2f}",
-            'timestamp': t['timestamp'].strftime('%d/%m/%Y %H:%M:%S')
-        })
+    return jsonify(account.to_dict())
 
-    return jsonify({
-        'id': conta['id'],
-        'nome_titular': conta['nome_titular'],
-        'numero_conta': conta['numero_conta'],
-        'saldo': f"{conta['saldo']:.2f}",
-        'transacoes': transacoes_formatadas
-    })
+@app.route('/accounts/transaction', methods=['POST'])
+@login_required
+def make_transaction():
+    """ Rota chamada pelo JavaScript para fazer depósitos e saques. """
+    user_id = session['user_id']
+    account_id = request.form['account_id']
+    transaction_type = request.form['transaction_type']
+    amount = request.form['amount']
+
+    account, message = account_service.perform_transaction(int(account_id), user_id, transaction_type, amount)
+
+    if account:
+        return jsonify({'success': True, 'message': message, 'new_balance': account.balance})
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+# --- Rotas de Admin (manter como estão) ---
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    all_users = user_service.get_all_users()
+    return render_template('admin_dashboard.html', users=all_users)
+
+@app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
+@admin_required
+def admin_delete_user(user_id):
+    if user_id == session.get('user_id'):
+        flash('Não pode eliminar a sua própria conta de administrador.', 'warning')
+        return redirect(url_for('admin_dashboard'))
+    user_service.delete_user(user_id)
+    flash(f'O utilizador com o ID {user_id} foi eliminado.', 'success')
+    return redirect(url_for('admin_dashboard'))
 
 if __name__ == '__main__':
     app.run(debug=True)
+
